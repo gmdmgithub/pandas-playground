@@ -11,6 +11,7 @@ numpy = "*"
 validate-email = "*"
 py3dns = "*"
 phonenumbers = "*"
+xlsxwriter = "*"
 
 [requires]
 python_version = "3.7"
