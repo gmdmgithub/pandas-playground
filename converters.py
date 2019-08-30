@@ -1,5 +1,7 @@
+"""
+functions for data conversion in dataframes
 
-
+"""
 
 def to_lowercase(val):
     if not val:
@@ -15,4 +17,4 @@ def float_converter(val):
     try:
         return np.float(val.replace(' ','').replace(',','.'))
     except:        
-        return 'B'
+        return None

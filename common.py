@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 
-import phonenumbers as phn
+
 
 import csv
 
@@ -11,7 +11,7 @@ import validators as val
 import converters as cnv
 
 
-def perform_test():
+def customer_cleaner():
     #encoding='ISO-8859-1'
     #encoding='windows-1252'
     # col_types ={
@@ -122,7 +122,7 @@ def read_csv():
 
 if __name__ == "__main__":
     # read_csv()
-    perform_test()
+    customer_cleaner()
 
     # from validate_email import validate_email
     # print(validate_email('alex@gmail.com',verify=True))
