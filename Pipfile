@@ -8,6 +8,9 @@ verify_ssl = true
 [packages]
 pandas = "*"
 numpy = "*"
+validate-email = "*"
+py3dns = "*"
+phonenumbers = "*"
 
 [requires]
 python_version = "3.7"
