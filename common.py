@@ -2,12 +2,8 @@ import pandas as pd
 import numpy as np
 import re
 
-
-
-import csv
-
 import cleaners as cln
-import validators as val
+import validators_util as val
 import converters as cnv
 
 
@@ -104,20 +100,6 @@ def customer_cleaner():
     # df_cust_with_email['VALID_MAIL'] = df_cust_with_email['EMAIL'].map(val.valid_email) #.copy()
 
     # print(df_cust_with_email[['ID','NAME1','EMAIL', 'VALID_MAIL','GSM']].query('VALID_MAIL == False'))
-
-
-
-
-def read_csv():
-    with open('./data/COMMON.csv') as csv_f:
-        csv_reader = csv.reader(csv_f,delimiter=';')
-        max = 10
-        i=0
-        for line in csv_reader:
-            if i > max:
-                break
-            print(line[2],line[3], len(line))
-            i += 1
 
 
 if __name__ == "__main__":
