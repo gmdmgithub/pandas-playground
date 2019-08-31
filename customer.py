@@ -7,7 +7,7 @@ import phonenumbers as phn
 import csv
 
 import cleaners as cln
-import validators as val
+import validators_util as val
 import converters as cnv
 
 
@@ -54,25 +54,27 @@ def customer_cleaner():
     
     df_customer['CL_GSM'] = df_customer['GSM'].map(cln.phone_cleaner)
     
-    
     df_customer['CL_PHONE'] = df_customer['PHONE'].map(cln.phone_cleaner)
     
     
+    # let's add country to the GSM
     df_customer['CL_GSM_ADDED_PREFIX'] = (df_customer['DOMICILE'] + df_customer['CL_GSM']).astype(str)
-    # df_customer['CL_GSM_CC'] = df_customer['CL_GSM_CC'].astype(str)
     df_customer['CL_GSM_ADDED_PREFIX'] =  df_customer['CL_GSM_ADDED_PREFIX'].map(cln.phone_prefix_updater)
-
-    df_customer['CL_GSM_CC'] = df_customer['DOMICILE'].map(cln.get_country_phone_code)
-
-
+    # df_customer['CL_GSM_CC'] = df_customer['DOMICILE'].map(cln.get_country_phone_code)
+    # grab more data from spoused to be valid gsm
     df_customer['CL_GSM_VALID'],df_customer['CL_GSM_PREFIX'],df_customer['CL_GSM_SUFFIX'],df_customer['CL_GSM_POSSIBLE'] = zip(*df_customer['CL_GSM_ADDED_PREFIX'].map(val.validate_phone))
-    df_customer['CL_PHONE_VALID'],df_customer['CL_PHONE_PREFIX'],df_customer['CL_PHONE_SUFFIX'],df_customer['CL_PHONE_POSSIBLE'] = zip(*df_customer['CL_PHONE'].map(val.validate_phone))
+    
+    # let's do the same for phone number
+    df_customer['CL_PHONE_ADDED_PREFIX'] = (df_customer['DOMICILE'] + df_customer['CL_PHONE']).astype(str)
+    df_customer['CL_PHONE_ADDED_PREFIX'] =  df_customer['CL_PHONE_ADDED_PREFIX'].map(cln.phone_prefix_updater)
+    
+    df_customer['CL_PHONE_VALID'],df_customer['CL_PHONE_PREFIX'],df_customer['CL_PHONE_SUFFIX'],df_customer['CL_PHONE_POSSIBLE'] = zip(*df_customer['CL_PHONE_ADDED_PREFIX'].map(val.validate_phone))
 
     df_customer['VALID_EMAIL'] = df_customer['EMAIL'].map(val.valid_email)
 
     df_save = df_customer[['ID',
                         'GSM', 'CL_GSM', 'CL_GSM_ADDED_PREFIX', 'CL_GSM_VALID','CL_GSM_PREFIX','CL_GSM_SUFFIX','CL_GSM_POSSIBLE', 
-                        'PHONE','CL_PHONE','CL_PHONE_VALID','CL_PHONE_PREFIX','CL_PHONE_SUFFIX','CL_PHONE_POSSIBLE',
+                        'PHONE','CL_PHONE','CL_PHONE_ADDED_PREFIX','CL_PHONE_VALID','CL_PHONE_PREFIX','CL_PHONE_SUFFIX','CL_PHONE_POSSIBLE',
                         'EMAIL','VALID_EMAIL']]
     print(df_save.query('GSM.notnull()' or 'PHONE.notnull()').head(50))
 

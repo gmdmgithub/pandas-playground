@@ -2,12 +2,18 @@ import re
 import phonenumbers as phn
 # from phonenumbers import COUNTRY_CODE_TO_REGION_CODE
 
+import validators
+
 def valid_email(val):
     """simple email validation - to consider using python validate_email - existence is possible"""
 
     if not val:
         return False
-    return bool(re.search(r"^[\w\.\+\-]+\@[\w]+\.[a-z]{2,3}$", val))
+    # more complex email validator
+    # return bool(re.search(r"^[\w\.\+\-]+\@[\w]+\.[a-z]{2,3}$", val))
+    if not validators.email(val):
+        return False
+    return True
 
     #from validate_email import validate_email
     #return validate_email(val,verify=True)

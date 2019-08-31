@@ -12,6 +12,8 @@ validate-email = "*"
 py3dns = "*"
 phonenumbers = "*"
 xlsxwriter = "*"
+email-validator = "*"
+validators = "*"
 
 [requires]
 python_version = "3.7"

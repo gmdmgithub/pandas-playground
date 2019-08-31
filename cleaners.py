@@ -31,6 +31,11 @@ def phone_prefix_updater(val):
         return None
     iso = re.sub("\d", "", val)
     cleared_phone = re.sub("\D", "", val)
+    
+    # it means for sure country code in the scope of phone number
+    if len(cleared_phone) > 9:
+        return cleared_phone
+    
     country_code = get_country_phone_code(iso)
     if country_code is None:
         return cleared_phone
