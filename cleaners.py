@@ -39,6 +39,7 @@ def phone_prefix_updater(val):
     country_code = get_country_phone_code(iso)
     if country_code is None:
         return cleared_phone
+
     if val.find(country_code) == 0:
         return cleared_phone
     return country_code + cleared_phone

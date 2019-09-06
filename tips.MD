@@ -10,7 +10,7 @@
 ```    
         df['SAMPLE'] = df['SAMPLE'].astype(str) 
         or 
-        df['SAMPLE'] = df['SAMPLE']..apply(str)
+        df['SAMPLE'] = df['SAMPLE'].apply(str)
 ```
 
 2. Similarly, converters can be applied during upload data or after

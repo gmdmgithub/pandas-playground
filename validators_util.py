@@ -70,7 +70,4 @@ def split_name(val):
         val_suspect = None
         if len(val_s[0]) < 4:
             val_suspect = val_s[0]
-        if val_s[0].upper() =='MLLE':
-            val_suspect = val_s[0]
-            print("found mlle")
         return  val_s[0], val_s[1], " ".join(val_s[2:]), val_suspect
