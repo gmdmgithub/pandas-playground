@@ -1,4 +1,5 @@
 import requests
+import pandas as pd
 
 payload ={
     "name": "Alex",
@@ -7,7 +8,7 @@ payload ={
 
 headers = {
     "Authorization": "Bearer sdfjkdsjfs088gftdd",
-    "accesskey": accesskey,  # provided accesskey
+    "accesskey": "accesskey",  # provided accesskey
 }
 
 r = requests.post('https://reqres.in/api/users', json=payload)
@@ -15,3 +16,6 @@ r = requests.post('https://reqres.in/api/users', json=payload)
 
 # print(help(r))
 print(r.text)
+
+print(pd.__version__)
+print(pd.show_versions())
