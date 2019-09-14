@@ -5,6 +5,7 @@ import re
 import cleaners as cln
 import validators_util as val
 import converters as cnv
+from datetime import date
 
 col_types ={
     "REGR1":str,
@@ -146,7 +147,9 @@ def perform_test():
     # df_save.to_csv (r'.\data\export_dataframe.csv', index = None, header=True)
     # df_save.to_csv (r'.\data\export_dataframe.csv', index = None, header=True)
 
-    with pd.ExcelWriter(r'.\\data\\output-2019-09-02.xlsx') as writer:  # doctest: +SKIP
+    f_name = f'.\\data\\output_{date.today().isoformat()}.xlsx'
+
+    with pd.ExcelWriter(f_name) as writer:  # doctest: +SKIP
         df_main_union.to_excel(writer, sheet_name='MAIN_ACTIVE_USERS', index = None, header=True)
         df_regr1_union.to_excel(writer, sheet_name='REGR1_USERS', index = None, header=True)
         df_regr2_union.to_excel(writer, sheet_name='REGR2_USERS', index = None, header=True)
@@ -212,12 +215,15 @@ def sector():
     # encoding = 'ISO-8859-1'
     # encoding = 'cp1250'
     # encoding = 'UTF-8'
-    encoding = 'utf-8-sig'
+    encoding = 'latin1'
+
+    read_columns = ['Id','Fieldname','Value']
     
     df = pd.read_csv('./data/SECTOR.1909081335.MULTIVALUE.CSV',sep=';',
-                            encoding=encoding, decimal=',', 
+                            encoding=encoding, decimal=',', usecols=read_columns, # reads only selected columns
                             thousands=' ', dtype=col_types)
     
+    print(df.info(memory_usage='deep'))
     print(df.tail(40))
     
 if __name__ == "__main__":

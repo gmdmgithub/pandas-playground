@@ -9,9 +9,11 @@ import csv
 import cleaners as cln
 import validators_util as val
 import converters as cnv
+from datetime import date
 
 
-def customer_cleaner():
+def read_customers():
+
     col_types = {
         "CODPOS":str,
         "PHONE":str,
@@ -35,6 +37,11 @@ def customer_cleaner():
         
     print(f'Number of records and columns {df_customer.shape}')
     print(f'Number of records in columns: {df_customer.count()}')
+
+    return df_customer
+
+def customer_cleaner():
+    df_customer = read_customers()
     
     # print(dir(df_customer))
     # df_customer['PHONE'] = df_customer['PHONE'].apply(str)
@@ -55,32 +62,59 @@ def customer_cleaner():
     df_customer['CL_GSM'] = df_customer['GSM'].map(cln.phone_cleaner)
     
     df_customer['CL_PHONE'] = df_customer['PHONE'].map(cln.phone_cleaner)
+    df_customer['CL_BUREAU'] = df_customer['BUREAU'].map(cln.phone_cleaner)
     
     
     # let's add country to the GSM
     df_customer['CL_GSM_ADDED_PREFIX'] = (df_customer['DOMICILE'] + df_customer['CL_GSM']).astype(str)
     df_customer['CL_GSM_ADDED_PREFIX'] =  df_customer['CL_GSM_ADDED_PREFIX'].map(cln.phone_prefix_updater)
-    # df_customer['CL_GSM_CC'] = df_customer['DOMICILE'].map(cln.get_country_phone_code)
     # grab more data from spoused to be valid gsm
     df_customer['CL_GSM_VALID'],df_customer['CL_GSM_PREFIX'],df_customer['CL_GSM_SUFFIX'],df_customer['CL_GSM_POSSIBLE'] = zip(*df_customer['CL_GSM_ADDED_PREFIX'].map(val.validate_phone))
     
     # let's do the same for phone number
     df_customer['CL_PHONE_ADDED_PREFIX'] = (df_customer['DOMICILE'] + df_customer['CL_PHONE']).astype(str)
     df_customer['CL_PHONE_ADDED_PREFIX'] =  df_customer['CL_PHONE_ADDED_PREFIX'].map(cln.phone_prefix_updater)
-    
     df_customer['CL_PHONE_VALID'],df_customer['CL_PHONE_PREFIX'],df_customer['CL_PHONE_SUFFIX'],df_customer['CL_PHONE_POSSIBLE'] = zip(*df_customer['CL_PHONE_ADDED_PREFIX'].map(val.validate_phone))
 
+    #and finally with the office phone
+    df_customer['CL_BUREAU_ADDED_PREFIX'] = (df_customer['DOMICILE'] + df_customer['CL_BUREAU']).astype(str)
+    df_customer['CL_BUREAU_ADDED_PREFIX'] =  df_customer['CL_BUREAU_ADDED_PREFIX'].map(cln.phone_prefix_updater)
+    df_customer['CL_BUREAU_VALID'],df_customer['CL_BUREAU_PREFIX'],df_customer['CL_BUREAU_SUFFIX'],df_customer['CL_BUREAU_POSSIBLE'] = zip(*df_customer['CL_BUREAU_ADDED_PREFIX'].map(val.validate_phone))
+
+    
     df_customer['VALID_EMAIL'] = df_customer['EMAIL'].map(val.valid_email)
 
-    df_save = df_customer[['ID',
-                        'GSM', 'CL_GSM', 'CL_GSM_ADDED_PREFIX', 'CL_GSM_VALID','CL_GSM_PREFIX','CL_GSM_SUFFIX','CL_GSM_POSSIBLE', 
-                        'PHONE','CL_PHONE','CL_PHONE_ADDED_PREFIX','CL_PHONE_VALID','CL_PHONE_PREFIX','CL_PHONE_SUFFIX','CL_PHONE_POSSIBLE',
-                        'EMAIL','VALID_EMAIL']]
-    print(df_save.query('GSM.notnull()' or 'PHONE.notnull()').head(50))
+    columns_to_save = [
+        'ID',
+        'GSM', 'CL_GSM', 'CL_GSM_ADDED_PREFIX', 'CL_GSM_VALID','CL_GSM_PREFIX','CL_GSM_SUFFIX','CL_GSM_POSSIBLE', 
+        'PHONE','CL_PHONE','CL_PHONE_ADDED_PREFIX','CL_PHONE_VALID','CL_PHONE_PREFIX','CL_PHONE_SUFFIX','CL_PHONE_POSSIBLE',
+        'BUREAU','CL_BUREAU','CL_BUREAU_ADDED_PREFIX','CL_BUREAU_VALID','CL_BUREAU_PREFIX','CL_BUREAU_SUFFIX','CL_BUREAU_POSSIBLE',
+        'EMAIL','VALID_EMAIL']
 
+    df_save = df_customer[columns_to_save]
+
+    print(df_save.head(10))
+
+    # grp = df_save.groupby('CL_GSM') 
+
+    # df_phoned = pd.concat(x for _, x in grp if len(x) >= 2)
+    # df_phoned = grp.filter(lambda x: len(x) >= 2)
+    
+    df_phoned = df_save.groupby(['CL_GSM']).size().reset_index(name='COUNT').query('COUNT > 1')
+
+    
+    print(df_phoned.head(20))
+
+    
+
+
+    # print(df_save.query('GSM.notnull()' or 'PHONE.notnull()').head(50))
 
     # df_save.to_csv (r'.\\data\\export_dataframe.csv', index = None, header=True)
-    df_save.to_excel (r'.\\data\\export_dataframe.xlsx', index = None, header=True)
+    
+    # f_name = f'.\\data\\duplicate_gsm_customers_{date.today().isoformat()}.xlsx'
+
+    # df_phoned.to_excel (f_name, index = None, header=True)
 
     
 
@@ -93,10 +127,33 @@ def customer_cleaner():
 
     # print(df_cust_with_email[['ID','NAME1','EMAIL', 'VALID_MAIL','GSM']].query('VALID_MAIL == False'))
 
+def clean_names():
+    df = read_customers()
+    
+    df['NAME_HAS_PREFIX'],df['NAME_PREFIX'],df['NAME_CLEANED'] = zip(*df['NAME1'].map(val.subtract_name))
+    
+    df['NAME_FIRST'], df['NAME_SURNAME'], df['NAME_EXTRAS'],df['NAME_SUSPECTED_PREFIX']  = zip(*df['NAME_CLEANED'].map(val.split_name))
+    columns_to_save = [
+        'ID','NAME1','NAME_SUSPECTED_PREFIX','NAME_HAS_PREFIX','NAME_PREFIX','NAME_CLEANED', 'NAME_FIRST', 'NAME_SURNAME', 'NAME_EXTRAS'
+        ]
+    print(df[columns_to_save])
 
+    # Counter - suspected prefixes
+
+    # print(df['NAME_SUSPECTED_PREFIX'].value_counts().head(20))
+
+    from collections import Counter
+    # print(dict(Counter(df['NAME_SUSPECTED_PREFIX']).most_common(30)))
+    print(Counter(df['NAME_SUSPECTED_PREFIX']).most_common(30))
+
+    # f_name = '.\\data\\cust_names_'+date.today().isoformat()+'.xlsx'
+
+    # df[columns_to_save].to_excel (f_name, index = None, header=True)
 
 if __name__ == "__main__":
     customer_cleaner()
+
+    # clean_names()
 
     # from validate_email import validate_email
     # print(validate_email('alex@gmail.com',verify=True))

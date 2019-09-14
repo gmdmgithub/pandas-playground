@@ -81,4 +81,30 @@ more loc may takes column names
 drinks.loc[:,'country':'wine_servings'] 
 ```
 
-8. 
+8. Unit testing conventions
+
+- unit test files should start as "test_" file name
+- always starts like (customer.py with function convert_name) :
+```
+import unittest
+import customer
+
+class TestCCustomer(unittest.TestCase):
+    def test_convert_name(self):
+        self.assertEqual(convert_name('Alex'), 'ALEX')
+```
+- assert list can be found:
+https://docs.python.org/3/library/unittest.html#unittest.TestCase.debug
+
+9. Reverse columns and rows
+- frost rows 
+````
+#first index responsible for rows
+df = df.loc[::-1]
+# but index will stay, to change
+df = df.reset_index(drop=True)
+
+##second index it's a column
+df = df.loc[:,::-1] # indexes would not change
+print(df)
+````
