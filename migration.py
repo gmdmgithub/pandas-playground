@@ -5,7 +5,7 @@ import re
 import cleaners as cln
 import validators_util as val
 import converters as cnv
-from datetime import date
+from datetime import date, time, datetime
 
 col_types ={
     "REGR1":str,
@@ -17,6 +17,7 @@ col_types ={
 }
 
 def perform_test():
+    start = time.process_time()
     #french lang
     #encoding='ISO-8859-1'
     #encoding='windows-1252'
@@ -148,6 +149,8 @@ def perform_test():
     # df_save.to_csv (r'.\data\export_dataframe.csv', index = None, header=True)
 
     f_name = f'.\\data\\output_{date.today().isoformat()}.xlsx'
+    before_save = (time.process_time() - start)
+    print(f'Elapsed time before save file is {before_save}')
 
     with pd.ExcelWriter(f_name) as writer:  # doctest: +SKIP
         df_main_union.to_excel(writer, sheet_name='MAIN_ACTIVE_USERS', index = None, header=True)
@@ -166,6 +169,9 @@ def perform_test():
     # df_regr5_union.to_excel (r'.\\data\\regr5_main.xlsx', index = None, header=True)
 
     # df_cus1_union.to_excel (r'.\\data\\cus1_main.xlsx', index = None, header=True)
+
+    elapsed_time = (time.process_time() - start)
+    print(f'Total elapsed time is: {elapsed_time}')
 
 def new_files():
     df = pd.read_csv('./data/COMMON-06-09.csv',sep=';',
