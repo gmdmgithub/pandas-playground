@@ -5,7 +5,10 @@ import re
 import cleaners as cln
 import validators_util as val
 import converters as cnv
+import util_func as ut
 from datetime import date, time, datetime
+
+import logging  
 
 col_types ={
     "REGR1":str,
@@ -15,6 +18,7 @@ col_types ={
     "REGR5":str,
     "CUSTOMER":str
 }
+
 
 def perform_test():
     start = time.process_time()
@@ -51,6 +55,8 @@ def perform_test():
         # 'BUREAU': phone_cleaner,
         'EMAIL': cnv.to_lowercase
     }
+    
+
 
     print("COMMON data read")
     
@@ -59,7 +65,9 @@ def perform_test():
                             dtype=col_types, na_values=nan_val,
                             converters=common_converters) 
 
-    print("CUSTOMER data read")
+    ut.log_dataset_data(df_customer)
+
+    logging.debug('Customer read')
     
     df_customer_cs1 = df_customer.copy()
     df_customer_cs1['CS1_ID'] = df_customer_cs1['CUS1']
@@ -212,7 +220,7 @@ def new_files():
 def sector():
     import chardet
     with open('./data/SECTOR.1909081335.MULTIVALUE.CSV','rb') as f:
-        print(f)
+        # print(f)
         result = chardet.detect(f.read())  # or readline if the file is large
         print('Chart detector',result['encoding'])
 
@@ -221,7 +229,9 @@ def sector():
     # encoding = 'ISO-8859-1'
     # encoding = 'cp1250'
     # encoding = 'UTF-8'
-    encoding = 'latin1'
+    # encoding = 'UTF-8'
+    # encoding = 'ISO-8859-9'
+    encoding = 'windows-1255'
 
     read_columns = ['Id','Fieldname','Value']
     
@@ -229,12 +239,28 @@ def sector():
                             encoding=encoding, decimal=',', usecols=read_columns, # reads only selected columns
                             thousands=' ', dtype=col_types)
     
-    print(df.info(memory_usage='deep'))
-    print(df.tail(40))
+    # logging.debug(df.info(memory_usage='deep'))
+    print(df.tail(10))
+
+    ut.log_dataset_data(df)
+
+def test_df():
+    encoding = 'latin1'
+    f_name = './data/COUNTRY.1909081337.MULTIVALUE.CSV'
+    df = pd.read_csv(f_name,sep=';',
+                            encoding=encoding, decimal=',', #usecols=read_columns, # reads only selected columns
+                            thousands=' ', dtype=col_types)
     
+    # logging.debug(df.info(memory_usage='deep'))
+    print(df.head(40))
+
+    ut.log_dataset_data(df)
+    
+
 if __name__ == "__main__":
     # perform_test()
     # new_files()
-    sector()
+    # sector()
+    test_df()
 
 

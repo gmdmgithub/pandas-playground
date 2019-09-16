@@ -1,7 +1,35 @@
 import pandas as pd
 import numpy as np
 import re
+import functools
+from time import process_time 
 
+from datetime import date
+import logging
+
+log_file = f'migration_logger_{date.today().isoformat()}.log'
+formatter = '%(asctime)s;%(name)s;%(message)s'
+
+logging.basicConfig(filename=log_file, level=logging.DEBUG, 
+                    format=formatter, filemode='a')
+
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
+stream_handler.setFormatter(logging.Formatter(formatter.replace(';',':')))
+logging.getLogger().addHandler(stream_handler)
+
+def elapsedtime(func):
+    @functools.wraps(func)
+    def newfunc(*args, **kwargs):
+        start_time = process_time()
+        func(*args, **kwargs)
+        elapsed_time = process_time() - start_time
+        print('function [{}] finished in {} ms'.format(
+            func.__name__, int(elapsed_time * 1000)))
+    return newfunc
+
+@elapsedtime
 def read_concat_data():
     # read some data from several files and merge into one
     file_list = ['sample1.csv', 'sample2.csv','sample3.csv']
@@ -30,6 +58,7 @@ def generate_df():
     df = pd.concat([df, pd.DataFrame({'Names':['John'],'Score':[12]})])
     print(df)
 
+@elapsedtime
 def reverse_rows_columns():
     df = pd.DataFrame({'Names':['Adam', 'Alex', 'John', 'Marry'], 'Score':['3','1','-','7']})
     print('Origin')
@@ -64,6 +93,13 @@ def reverse_rows_columns():
 def clipboard_reader():
     # remember to have something into the clipboard
     print(pd.read_clipboard())
+
+
+def log_dataset_data(df):
+    logging.debug(f'shape of common data is {df.shape}')
+    # logging.debug(f'more info: \n{df.info}')
+    logging.debug(f'types \n{df.dtypes}')
+    logging.debug(f'is nunvaluse in the dataset \n{df.isnull().sum()}')
 
 
 if __name__ == '__main__':
