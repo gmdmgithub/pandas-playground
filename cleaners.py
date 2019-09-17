@@ -27,22 +27,24 @@ def get_country_phone_code(country_iso):
     return None
 
 def phone_prefix_updater(val):
+    """"updates country prefix on the phone"""
+    
     if not val:
         return None
-    iso = re.sub("\d", "", val)
-    cleared_phone = re.sub("\D", "", val)
-    
-    # it means for sure country code in the scope of phone number
-    if len(cleared_phone) > 9:
-        return cleared_phone
-    
+    # looking only for country prefix
+    iso = re.sub('[^A-Za-z]', "", val)
+    cleared_phone = re.sub(r"\D", "", val)
+
     country_code = get_country_phone_code(iso)
     if country_code is None:
         return cleared_phone
+    
+    # it means for sure country code in the scope of phone number
+    if len(cleared_phone) > 8:
+        if (val.find(country_code) + 1) == len(country_code):
+            return cleared_phone 
 
-    if val.find(country_code) == 0:
-        return cleared_phone
     return country_code + cleared_phone
 
-
-# print(get_calling_code('US')) 
+if __name__ == "__main__":
+    print(phone_prefix_updater('UZ99890929921'))

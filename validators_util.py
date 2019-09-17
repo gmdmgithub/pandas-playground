@@ -20,6 +20,7 @@ def valid_email(val):
 
 
 def validate_phone(val):
+    #TODO!! - compare prefix with country
     if not val:
         return False, None, None, False
     try:
@@ -53,14 +54,14 @@ def get_prefix(val):
     prefix_list.sort(key = lambda s: -len(s))
 
     for s in prefix_list:
-        if val.find(s) == 0:
+        if val.find(s) == len(s) -1:
             return s
     return ''
 
 def split_name(val):
     if not val:
         return None, None ,None, None
-    
+    val = val.title()
     val_s = val.split(' ')
     if len(val_s) == 1:
         return val, None, None, None
