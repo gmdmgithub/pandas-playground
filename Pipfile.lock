@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "2a0a40eb07dc2121ed5222d7aeaaa8ad24306817c1f8c00f60d8b51873dcda14"
+            "sha256": "dcacbfbbd2f9c483a6a305cd07623870a26fb1cb99b5f88f6fc7bfca08daa103"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -42,7 +42,15 @@
                 "sha256:36c5e8e38d4369a08b6780b7f27d790a292b2b08eea01607865bf0936c558e01",
                 "sha256:f69c21288a962f4da86e56c4905b49d11aba7938d3d740e80d9e366ee4f1632d"
             ],
+            "index": "pypi",
             "version": "==1.16.0"
+        },
+        "email-normalize": {
+            "hashes": [
+                "sha256:66dc6e78f8b18b93e8a85adbdc0f658ed5d273d77ebbe65f5ea660403387bf17"
+            ],
+            "index": "pypi",
+            "version": "==0.2.1"
         },
         "email-validator": {
             "hashes": [
@@ -170,10 +178,10 @@
         },
         "urllib3": {
             "hashes": [
-                "sha256:b246607a25ac80bedac05c6f282e3cdaf3afb65420fd024ac94435cabe6e18d1",
-                "sha256:dbe59173209418ae49d485b87d1681aefa36252ee85884c31346debd19463232"
+                "sha256:2f3eadfea5d92bc7899e75b5968410b749a054b492d5a6379c1344a1481bc2cb",
+                "sha256:9c6c593cb28f52075016307fc26b0a0f8e82bc7d1ff19aaaa959b91710a56c47"
             ],
-            "version": "==1.25.3"
+            "version": "==1.25.5"
         },
         "validate-email": {
             "hashes": [
@@ -198,5 +206,20 @@
             "version": "==1.2.1"
         }
     },
-    "develop": {}
+    "develop": {
+        "autopep8": {
+            "hashes": [
+                "sha256:4d8eec30cc81bc5617dbf1218201d770dc35629363547f17577c61683ccfb3ee"
+            ],
+            "index": "pypi",
+            "version": "==1.4.4"
+        },
+        "pycodestyle": {
+            "hashes": [
+                "sha256:95a2219d12372f05704562a14ec30bc76b05a5b297b21a5dfe3f6fac3491ae56",
+                "sha256:e40a936c9a450ad81df37f549d676d127b1b66000a6c500caa2b085bc0ca976c"
+            ],
+            "version": "==2.5.0"
+        }
+    }
 }
