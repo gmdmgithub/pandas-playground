@@ -6,6 +6,7 @@ import validators_util as vld
 import converters as cnv
 import faker_producer as fp
 import dictionary_mapper as dm
+import databe_updater as dbu
 
 import util_func as ut
 from util_func import elapsedtime
@@ -17,10 +18,12 @@ from datetime import date, time, datetime
 import json
 import re
 
+
 pd.set_option('mode.chained_assignment', None)
 
 # TODO - move to config
 IS_PRE_TEST = True
+
 
 @elapsedtime
 def read_customer_file():
@@ -46,12 +49,12 @@ def read_customer_file():
 
     common_converters = {
         # 'SMS1':phone_cleaner, # coverts in-place - we want to have the original value
-        'EMAIL': cnv.to_lowercase
+        'EMAIL.1': cnv.to_lowercase
     }
 
     encoding = 'utf-8'
-    f_name = './data/CUSTOMER-2019-09-25.CSV'
-        
+    f_name = './data/CUSTOMER-2019-09-26-01.CSV'
+
     df = pd.read_csv(f_name, sep=';',
                      encoding=encoding, decimal=',',
                      thousands=' ',
@@ -60,7 +63,7 @@ def read_customer_file():
                      converters=common_converters,
                      error_bad_lines=False)
 
-    
+    print(df.shape)
     ut.log_dataset_data(df)
 
     return df
@@ -89,11 +92,11 @@ def convert_retail_to_json():
 
     # ################ CONVERTION MAPPING STARTS ########
     
-    # TODO SEX gos to mapper (male, female name)
+    # TODO SEX goes to mapper (male, female name)
     df['first_name'] = df['sex'].map(fp.first_name)
-
     df['last_name'] = df['FAMILY.NAME'].map(fp.last_name)
 
+    # 
     df['full_name'] = (df['first_name'] + ' ' + df['last_name']).astype(str)
 
     df['national_register_number'] = df['TAX.ID'].map(
@@ -269,8 +272,7 @@ def convert_retail_to_json():
 
     res = df.to_json(orient='records')
     res = json.loads(res)
-    f_name = f'cust_retail_create_{date.today().isoformat()}.json'
-    with open(f_name, 'w', encoding='utf-8') as f:
+    with open(ut.file_name('customer_retail'), 'w', encoding='UTF-8') as f:
         json.dump(res, f, indent=4)
 
 @elapsedtime
@@ -281,6 +283,7 @@ def convert_sme_to_json():
     """
 
     df = read_customer_file()
+   
 
     # ##########################rename columns which does not need to be converted
     df.rename(columns={'NAME.1': 'company_name', 'NATIONALITY': 'nationality',
@@ -288,13 +291,14 @@ def convert_sme_to_json():
                        'CUSTOMER.CODE': 'prospect_id',
                        'TAX.ID': 'company_registered_number'}, inplace=True)
 
-    # ##########################CONVERTION?MAPPING STARTS
+    # ########################## CONVERTION MAPPING STARTS
     df = df.query('SECTOR > 1999 | SECTOR == 1501 | SECTOR == 1502 | SECTOR == 1602')
 
     df['customer_segment_id'] = "SME"
 
+    
     # fake name and street
-    df['company_name'] = df['company_name'].map(fp.company)
+    df['company_name'] = (df['company_registered_number']+'|'+df['company_name']).astype(str).map(dbu.company_name)
     df['fk_street_name'] = df['STREET'].map(fp.street_name)
 
     df['fk_street_number'] = df['STREET'].map(fp.street_number)
@@ -325,6 +329,9 @@ def convert_sme_to_json():
         dm.company_nace_basic).astype(str)
     df['company_nace'] = df['company_nace_basic'].apply(lambda x: [x])
 
+
+    
+    
     # ####tax_residence_main_country nested
     # no date - fake added - must be different
     df['trmc_date'] = df['company_registered_number'].map(fp.past_date)
@@ -348,6 +355,8 @@ def convert_sme_to_json():
     df['agreements'] = np.empty((len(df), 0)).tolist()
     df['tax_residence_other_countries'] = df['tax_residence_main_country']
 
+
+
     columns = ['customer_segment_id', 'company_name',
                'company_address',
                'company_registered_number', 'company_vat_number', 'company_legal_form', 'company_start_date',
@@ -364,22 +373,22 @@ def convert_sme_to_json():
 
     df['tax_residence_other_countries_res'] = df['tax_residence_other_countries']
     df = df.drop(columns='tax_residence_other_countries')
+    
     array_series = df.groupby(df.index).agg(lambda x: list(x))[
         'tax_residence_other_countries_res']
-
+    
     # ignore index
     df = pd.concat([df.reset_index(drop=True), pd.DataFrame(
         array_series.iteritems()).drop(columns=0)], axis='columns', sort=False)
     df.rename(columns={1: 'tax_residence_other_countries'}, inplace=True)
-    df = df[columns]
 
+    df = df[columns]
     res = df[columns].to_json(orient='records')
     res = json.loads(res)
-    f_name = f'cust_sme_create_{date.today().isoformat()}.json'
-    with open(f_name, 'w', encoding='utf-8') as f:
+    with open(ut.file_name('customer_sme'), 'w', encoding='utf-8') as f:
         json.dump(res, f, indent=4)
 
 
 if __name__ == "__main__":
-    convert_retail_to_json()
+    # convert_retail_to_json()
     convert_sme_to_json()

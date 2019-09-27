@@ -8,12 +8,16 @@ def valid_email(val):
     """simple email validation - to consider using python validate_email - existence is possible"""
 
     if not val:
-        return False
+        return 0
     
     #from validate_email import validate_email
     # return validate_email(val,verify=True)
 
-    return False if not validators.email(val) else True
+    #for more than one we pick-up first
+    if len(val.split('|')) > 0 and len(val.split('|')[0]) > 0:
+        val = val.split('|')[0]
+
+    return 0 if not validators.email(val) else 1
 
 def validate_phone(val):
     # TODO!! - compare prefix with country

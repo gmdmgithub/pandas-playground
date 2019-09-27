@@ -40,7 +40,9 @@ def read_accounts_file():
         'OPENING.DATE': str,
         'OPEN.CATEGORY': str,
         'L.AC.PM.CO.EX': str,
-        'L.AC.DATE.PR': str
+        'L.AC.DATE.PR': str,
+        'REGROUPE':str,
+        'IS.RELATION.TYPE':str
     }
 
     common_converters = {
@@ -49,21 +51,18 @@ def read_accounts_file():
     }
     
     encoding = 'utf-8'
-    f_name = './data/BE0010001_ACCOUNT2.1909241334.csv'
+    f_name = './data/BE0010001_ACCOUNT2.1909261440.csv'
     
     df = pd.read_csv(f_name, sep=';',
                      encoding=encoding, decimal=',',
                      thousands=' ',
-                    #  dtype=types,
-                    dtype=object, # for accounts possible
+                     dtype=types,
                     #  usecols=use_columns,
                     #  converters=common_converters,
                      error_bad_lines=False)
     
    
-
-    # df.to_excel (f'accounts{date.today().isoformat()}.xlsx', index = None, header=True)
-
+    print(df.shape)
     return df
 
 @elapsedtime
@@ -123,8 +122,7 @@ def prepare_json_for_accounts():
 
     res = df.to_json(orient='records')
     res = json.loads(res)
-    f_name = f'accounts_create_{date.today().isoformat()}.json'
-    with open(f_name, 'w', encoding='utf-8') as f:
+    with open(ut.file_name('current_accounts'), 'w', encoding='UTF-8') as f:
         json.dump(res, f, indent=4)
 
 

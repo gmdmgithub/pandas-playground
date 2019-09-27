@@ -18,17 +18,6 @@ def convert(val, switcher, default_val=None):
         return default_val
     return switcher.get(val) if switcher.get(val) else default_val
 
-def document_type(val):
-    """convert LEGAL.DOC.NAME to document_type dict"""
-    
-    # TODO!! - default value?
-    default_val = val
-
-    # TODO!! - matching is essential
-    switcher = {
-        '9999': "PASSPORT"
-    }
-    return convert(val, switcher, default_val)
 
 def segment_id(val):
     """convert dict TARGET to customer_segment_id"""

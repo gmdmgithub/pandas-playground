@@ -3,6 +3,7 @@ functions for data conversion in dataframes
 
 """
 from datetime import datetime
+import re
 
 def to_lowercase(val):
     """
@@ -40,7 +41,7 @@ def street_converter(val):
     """
     if not val:
         return None
-    # TODO! - split into 3 name, building and apartment, some sample below
+    # TODO! - split into 3 name, house and apartment, some samples below
     # 91 WATERLOO ROAD
     # RUE NEUVE 82
     # RUE FELIX DELHASSE 14 /TM
@@ -51,7 +52,34 @@ def street_converter(val):
     # VIA SETTI CARRARO 15/F
     # VIA NICOLA SCARANO 3 INT3
 
-    return val, '1', '3'
+    house = None
+    apartment = None
+    
+    #remove more than two spaces
+    val = re.sub("[  ]{2,}", " ", val).strip()
+    # remove spaces before and after house-apartment devider
+    val = re.sub(" /", "/", val)
+    val = re.sub("/ ", "/", val)
+
+    #split the address
+    street = val
+    addr = val.split(' ')
+    
+    # just one no case
+    if len(addr) == 1:
+        return val, house, apartment
+    
+    # most common cases - last contain a number
+    if re.search(r"[0-9]{1,}", addr[-1]) and len(re.search(r"[0-9]{1,}", addr[-1]).group()) > 0:
+        street = ' '.join(addr[:-1])
+        house = addr[-1]
+        splitted = addr[-1].split('/')
+        if len(splitted) > 1:
+            house = splitted[0]
+            apartment = splitted[1]
+
+    
+    return street, house, apartment
 
 def date_converter(val):
     """
@@ -82,3 +110,6 @@ def pep(val):
     if not val:
         return None
     return True if val == 'Y' else False
+
+if __name__ == "__main__":
+    print(street_converter('RES. LE 205  RUE GRANDE 205/1.3'))
