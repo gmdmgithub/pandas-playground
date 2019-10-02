@@ -1,13 +1,18 @@
 import re
-import phonenumbers as phn
-
+import pandas as pd
 import validators
+import util_func as ut
 
 
 def valid_email(val):
-    """simple email validation - to consider using python validate_email - existence is possible"""
+    """
+    simple email validation - to consider using python validate_email - existence is possible
+    
+    Arguments -- val: single cell
+    Return: 0 - not valied, 1 valied
+    """
 
-    if not val:
+    if ut.isnull(val):
         return 0
     
     #from validate_email import validate_email
@@ -18,16 +23,6 @@ def valid_email(val):
         val = val.split('|')[0]
 
     return 0 if not validators.email(val) else 1
-
-def validate_phone(val):
-    # TODO!! - compare prefix with country
-    if not val:
-        return False, None, None, False
-    try:
-        num = phn.parse('+'+val, None)
-        return True, str(num.country_code), str(num.national_number), phn.is_possible_number(num)
-    except:
-        return False, None, None, False
 
 
 def validate_birthday(val):
@@ -44,9 +39,12 @@ def validate_birthday(val):
 
     - by the number 2 followed by the first 9 digits of the national number for persons born after 31 December 1999.
 
+    Checks only Belgium customers
+     Arguments -- val: three piped cells  - Country code | tax.id | birth_day
+    Return: 
+    - True/False -
     """
-
-    if not val:
+    if ut.isnull(val):
         return False
     
     val = str(val)

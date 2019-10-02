@@ -3,6 +3,8 @@ functions for conversion dictionaries between two systems
 
 """
 import dictionary_mapper_switcher as dms
+import util_func as ut
+import pandas as pd
 
 def convert(val, switcher, default_val=None):
     """
@@ -14,7 +16,7 @@ def convert(val, switcher, default_val=None):
     -- default_val - default value if not matched or val is None
     Return: matched dictionary value for target system
     """
-    if not val:
+    if ut.isnull(val):
         return default_val
     return switcher.get(val) if switcher.get(val) else default_val
 
@@ -43,18 +45,17 @@ def segment_id(val):
 def title(val):
     """convert dict TITLE to title"""
 
-    # TODO!! - default value?
     default_val = None
 
-    # TODO!! - matching is essential
+    # Accepted by business 02.10.2019 
     switcher = {
-        'Mme': "AAA",
-        'M': "BBB",
-        'M.Mme': "CCC",
-        'Mlle': 'DDD',
-        'MM': 'DDD',
-        'Mmes': 'DDD',
-        'Mlles': 'DDD'
+        'M': 'TITLE_MR',
+        'M.Mme': 'TITLE_MS',
+        'MM': 'TITLE_MRS',
+        'Mlle': 'TITLE_MS',
+        'Mlles': 'TITLE_MS',
+        'Mme': 'TITLE_MRS',
+        'Mmes': 'TITLE_MS'
     }
     return convert(val, switcher, default_val)
 
@@ -65,40 +66,21 @@ def customer_status(val):
     customer_status ['ACTIVE','DORMANT','CLOSED']
     
     """
-    # TODO!! - default value?
+    # decided always active
     default_val = 'ACTIVE'
 
-    # TODO!! - matching is essential
+    # TODO if change please provide
     switcher = {
-        '1': 'AAA',
-        '1000': 'AAA',
-        '1001': 'AAA',
-        '3011': 'AAA',
-        '3001': 'AAA',
-        '3012': 'AAA',
-        '3013': 'AAA',
-        '3014': 'AAA',
-        '3003': 'AAA',
-        '3004': 'AAA',
-        '3006': 'AAA',
-        '23': 'AAA',
-        '3015': 'AAA',
-        '3008': 'AAA',
-        '3009': 'AAA',
-        '3005': 'AAA',
-        '3010': 'AAA',
-        '3007': 'AAA'
+        
     }
-    # TODO!!! wrong dict from R11
     return convert(val, switcher, default_val)
 
 def display_lang(val):
     """convert dict LANGUAGE to display_and_messaging_language"""
 
-    # TODO!! - default value?
-    default_val = 'EN'
+    default_val = 'FR'
 
-    # TODO!! - matching is essential
+    # Accepted by business in September 2019 
     switcher = {
         '1': "FR",
         '2': "NL",# Dutch
@@ -109,21 +91,37 @@ def display_lang(val):
 
 def document_type(val):
     """convert dict LEGAL.DOC.NAME to document_type"""
-    # TODO!! - default value?
-    default_val = 'ID'
+    default_val = None
 
-    # TODO!! - matching is essential
+    # Matching accepted by business 02.10.2019
     switcher = {
-        'CI.BELGE':'ID',
-        'DOC.ID.MIG':'RESIDENCE_CARD',
-        'CI.ETR':'RESIDENCE_CARD',
-        'PASSEPORT':'PASSPORT',
-        'SEJOUR':'RESIDENCE_CARD',
-        'CI.SPEC':'RESIDENCE_CARD',
-        'CI.TEMP':'RESIDENCE_CARD',
-        'STATUT':'RESIDENCE_CARD',
-        'ETRANGER':'RESIDENCE_CARD',
-        'ADRESSE':'RESIDENCE_CARD'
+        'PASSEPORT': 'PASSPORT',
+        'ADRESSE': 'RESIDENCE_CARD',
+        'ADRESSE.FACT': 'MIGRATION_DOCUMENT_ID',
+        'ADRESSE.TAX': 'MIGRATION_DOCUMENT_ID',
+        'AUTOCERT': 'MIGRATION_DOCUMENT_ID',
+        'AUTOCERT.PEP': 'MIGRATION_DOCUMENT_ID',
+        'AYANT.DROIT': 'MIGRATION_DOCUMENT_ID',
+        'AYANTDROIT': 'MIGRATION_DOCUMENT_ID',
+        'CERT.MAR.PA': 'MIGRATION_DOCUMENT_ID',
+        'CERT.NAISS': 'MIGRATION_DOCUMENT_ID',
+        'CI.BELGE': 'ID',
+        'CI.ETR': 'ID',
+        'CI.KID': 'ID',
+        'CI.SPEC': 'RESIDENCE_CARD',
+        'CI.TEMP': 'RESIDENCE_CARD',
+        'CONSTITUTION': 'MIGRATION_DOCUMENT_ID',
+        'CONVENTION': 'MIGRATION_DOCUMENT_ID',
+        'DECLNR': 'MIGRATION_DOCUMENT_ID',
+        'DOC.ID.MIG': 'RESIDENCE_CARD',
+        'ETRANGER': 'RESIDENCE_CARD',
+        'EUR276': 'MIGRATION_DOCUMENT_ID',
+        'HIS276': 'MIGRATION_DOCUMENT_ID',
+        'PRESENTATION': 'MIGRATION_DOCUMENT_ID',
+        'PROFESSION': 'MIGRATION_DOCUMENT_ID',
+        'RGSTR.POPU': 'MIGRATION_DOCUMENT_ID',
+        'SEJOUR': 'RESIDENCE_CARD',
+        'STATUT': 'RESIDENCE_CARD'
     }
 
     return convert(val, switcher, default_val)
@@ -132,23 +130,13 @@ def document_type(val):
 def residence_mapper(val):
     """convert dict RESIDENCE to residence"""
     
-    # TODO!! - default value?
     default_val = False
 
-    # TODO!! - matching is essential
+    # Accepted by Tomasz Mierzwinski 1.10.2019
     switcher = {
         'BE':True
     }
 
-    return convert(val, switcher, default_val)
-
-def us_person(val):
-    """basis on dict RESIDENCE change to us_person dict"""
-    default_val = False
-    switcher = {
-        "US": True
-    }
-    
     return convert(val, switcher, default_val)
 
 
@@ -188,4 +176,78 @@ def product_type_id(val):
         '1501':'VOD_1501'
     }
     return convert(val, switcher, default_val)
+
+def occupation(val):
+    """convert EMPLOYMENT.STATUS - accounts to occupation dict"""
     
+    default_val = 'MIGRATION'
+
+    # Accepted by business 02.10.2019
+    switcher = {
+        'AIDANT': 'UNEMPLOYED',
+        'ETUDIANT': 'STUDENT',
+        'FEMME.AU.FOYER': 'UNEMPLOYED',
+        'FONCTIONNAIRE': 'PUBLIC_SERVANT',
+        'FONCTIONNAIRECDD': 'PUBLIC_SERVANT',
+        'INDEPENDANT': 'SELF_EMPLOYED',
+        'NON.DEFINI': 'EMPLOYEE',
+        'PENSIONNE': 'RETIREMENT',
+        'PROFESSION.LIBERALE': 'SELF_EMPLOYED',
+        'SALARIE.EMPLOYE': 'EMPLOYEE',
+        'SALARIE.EMPLOYECDD': 'EMPLOYEE',
+        'SALARIE.EMPLOYECDD2': 'EMPLOYEE',
+        'SALARIE.EMPLOYECDI': 'EMPLOYEE',
+        'SANS.EMPLOI': 'UNEMPLOYED',
+        'STAGIAIRE': 'EMPLOYEE'
+    }
+    return convert(val, switcher, default_val)
+
+def marital_status_id(val):
+    """convert MARITAL.STATUS - accounts to marital_status_id dict"""
+    
+    default_val = None
+
+    # Accepted by business 01.10.2019
+    switcher = {
+        '1': 'SINGLE',
+        '2': 'MARRIED',
+        '3': 'WIDO`WE`D',
+        '4': 'DIVORCED',
+        '5': 'SEPARATED',
+        '6': 'SEPARATED',
+        '7': 'LEGALLY_COHABITATING',
+        '8': 'LEGALLY_COHABITATING'
+    }
+    return convert(val, switcher, default_val)
+
+def source_of_wealth(val):
+    """convert EB.LOOKUP.LOOKUP.NAME - to source_of_wealth"""
+    
+    default_val = None
+
+    # TODO! - no dict from temenos
+    switcher = {
+        'AUTRE': 'PRIVATE_MEANS',
+        'DONATION': 'INHERITANCE',
+        'HERITAGE': 'INHERITANCE',
+        'IMMOBILIER': 'PRIVATE_MEANS',
+        'SALAIRE': 'WORK_SALARY',
+        'VALEURSMOBILIERES': 'PRIVATE_MEANS',
+    }
+    return convert(val, switcher, default_val)
+
+def source_of_funds(val):
+    """convert EB.LOOKUP.LOOKUP.NAME - to source_of_funds"""
+    
+    default_val = None
+
+    # TODO! - no dict from temenos
+    switcher = {
+        'AUTRE': 'PRIVATE_MEANS',
+        'DONATION': 'INHERITANCE',
+        'HERITAGE': 'INHERITANCE',
+        'IMMOBILIER': 'PRIVATE_MEANS',
+        'SALAIRE': 'WORK_SALARY',
+        'VALEURSMOBILIERES': 'PRIVATE_MEANS',
+    }
+    return convert(val, switcher, default_val)

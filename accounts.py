@@ -24,10 +24,15 @@ IS_TEST_ENV = True
 
 
 @elapsedtime
-def read_accounts_file():
-    """Read the CSV file with customer data"""
+def read_accounts_file(type=None):
+    """
+    Read the CSV file with accounts data
+    Arguments -- Type of customer realted to account if None - read all
+    Return: dataframe with accounts
+
+    """
     
-    #to optimize read only necessary columns
+    #TODO - when shape is known define to optimize
     use_columns = ['MARITAL.STATUS', 'TARGET','CUSTOMER.STATUS' ]
     
     types = {
@@ -42,7 +47,8 @@ def read_accounts_file():
         'L.AC.PM.CO.EX': str,
         'L.AC.DATE.PR': str,
         'REGROUPE':str,
-        'IS.RELATION.TYPE':str
+        'IS.RELATION.TYPE':str,
+        'CUSTOMER':str
     }
 
     common_converters = {
@@ -61,8 +67,12 @@ def read_accounts_file():
                     #  converters=common_converters,
                      error_bad_lines=False)
     
-   
-    print(df.shape)
+
+    if type == 'SME':
+        df = df[df['SECTOR.CU.NATCLI'].isin(['BA', 'CO', 'ET', 'OR'])]
+    elif type == 'RETAIL': 
+        df = df[df['SECTOR.CU.NATCLI'].isin(['RE'])]
+    
     return df
 
 @elapsedtime
