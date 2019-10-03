@@ -10,6 +10,8 @@ import cleaners as cln
 import validators_util as vld
 import pandas as pd
 
+from customers import DEFAULT_MAIL, DEFAULT_PHONE
+
 # french as common lang in Belgium
 fake = Faker('fr_FR')
 # fake = Faker()
@@ -43,7 +45,7 @@ def national_register_number(val):
 
 
 def document_id(val):
-    return None if ut.isnull(val) else fake.random_number()
+    return None if ut.isnull(val) else str(fake.random_number(digits=8, fix_len=True))
 
 
 def street_name(val):
@@ -67,13 +69,14 @@ def postalcode(val):
 
 
 def email(email, prospect_id):
-    # return f'migration.{prospect_id}@vodeno.com' if vld.valid_email(email) == 0 else fake.email()
+    
+    # return DEFAULT_MAIL.replace('[placeholder]',str(prospect_id)) if vld.valid_email(email) == 0 else fake.email()
     
     # if ut.isnull(email):
     if vld.valid_email(email) == 0:
         global missed_email_counter
         missed_email_counter +=1
-        return f'migration.{prospect_id}@vodeno.com' 
+        return DEFAULT_MAIL.replace('[placeholder]',str(prospect_id))
     return fake.email()
 
 
@@ -89,7 +92,7 @@ def phone_number(sms, desk_phone):
     if ((cln.phone_cleaner(sms) is None) and (cln.phone_cleaner(desk_phone) is None)):
         global missed_phone_counter
         missed_phone_counter += 1
-        return None 
+        return DEFAULT_PHONE 
 
     return cln.phone_cleaner(fake.phone_number())
 

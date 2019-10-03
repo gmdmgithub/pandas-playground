@@ -61,9 +61,9 @@ def save_xlsx(target=ProductFiles.CUSTOMER):
         print('Invalid argument - target')
         return
     print(df.shape)
-    print(df.columns)
+    # print(df.columns)
     f_name = f"./output/{target}_{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.xlsx"
-    # df.to_excel(f_name, index = None, header=True)
+    df.to_excel(f_name, index = None, header=True)
 
 @elapsedtime
 def sector():
@@ -114,7 +114,8 @@ def dictionary_producer(target, dictionary):
 
     # dict_list = df['LEGAL.DOC.NAME'].map(
     #     cln.document_type).dropna().unique().tolist()
-
+    
+    # print(list(filter(lambda x: x.find('RESIDE') > -1 , df.columns.tolist())))
     
     # print for dictionary
     dict_list = df[dictionary].dropna().unique().tolist()
@@ -443,9 +444,9 @@ if __name__ == "__main__":
     # accounts('RETAIL')
     # combain_regroupe()
     # combine_relations('SME')
-    # save_xlsx(ProductFiles.ACCOUNT)
+    save_xlsx(ProductFiles.CUSTOMER)
     # incorrect_email_address()
-    print_leg_dod_dict()
+    # print_leg_dod_dict()
     # combine_customer_account()
     # read_databe_files()
 

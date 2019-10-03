@@ -24,7 +24,10 @@ pd.set_option('mode.chained_assignment', None)
 
 # TODO - move to config
 IS_TEST_ENVIRONMENT = True
-TEST_PROBE = 1000
+DEFAULT_MAIL = 'migration.[placeholder]@vodeno.com'
+DEFAULT_PHONE = '111111111'
+DEFAULT_PHONE_PREFIX = '32'
+TEST_PROBE = 20000
 
 
 @elapsedtime
@@ -33,7 +36,6 @@ def read_customer_file():
 
     # to optimize read only necessary columns
     use_columns = ['MARITAL.STATUS', 'TARGET', 'CUSTOMER.STATUS']
-
     types = {
         'MARITAL.STATUS': str,
         'TARGET': str,
@@ -63,7 +65,7 @@ def read_customer_file():
     }
 
     encoding = 'UTF-8'
-    f_name = './data/CUSTOMER-2019-09-26-01.CSV'
+    f_name = './data/CUSTOMER-2019-10-03-01.CSV'
 
     df = pd.read_csv(f_name, sep=';',
                      encoding=encoding, decimal=',',
@@ -94,25 +96,37 @@ def convert_retail_to_json():
 
     # second take only those with active accounts
     df_acc = acc.read_accounts_file('RETAIL')
+    
     ut.log_dataset_data(df_acc)
     df_acc = df_acc.drop_duplicates(['CUSTOMER'], keep='first')
     ut.log_dataset_data(df_acc)
-    df_acc = df_acc[df_acc['REGROUPE'].isnull()]
+    
+    # df_acc = df_acc[df_acc['REGROUPE'].isnull()]
+    
     df_acc['CUSTOMER'] = df_acc['CUSTOMER'].astype(str)
     ut.log_dataset_data(df_acc)
 
     # .drop('CUSTOMER', axis=1, inplace=True)
-    df = pd.merge(df, df_acc['CUSTOMER'],
+    acc_columns = ['CUSTOMER','REGROUPE_0', 'REGROUPE_1','REGROUPE_2']
+    df_basic = pd.merge(df, df_acc[acc_columns],
                   left_on='CUSTOMER.CODE', right_on='CUSTOMER')
+    ut.log_dataset_data(df_basic)
+    df_regr_0 = pd.merge(df, df_acc[acc_columns],
+                  left_on='CUSTOMER.CODE', right_on='REGROUPE_0')
+    ut.log_dataset_data(df_regr_0)
 
-    # df = df[df['SMS.1'].isnull()]
-    # # check not matching customers
-    # df = pd.merge(df,df_acc['CUSTOMER'], left_on='CUSTOMER.CODE', right_on='CUSTOMER', how='outer', indicator=True)
-    # # left_merged = 'both' #left_only
-    # left_merged = 'right_only'
-    # df = df.query('_merge == @left_merged')[['CUSTOMER.CODE', 'CUSTOMER']].reset_index(drop=True)
-    # print(df)
+    df_regr_1 = pd.merge(df, df_acc[acc_columns],
+                  left_on='CUSTOMER.CODE', right_on='REGROUPE_1')
+    ut.log_dataset_data(df_regr_1)
 
+    df_regr_2 = pd.merge(df, df_acc[acc_columns],
+                  left_on='CUSTOMER.CODE', right_on='REGROUPE_2')
+    ut.log_dataset_data(df_regr_2)
+    
+    df = pd.concat([df_basic, df_regr_0, df_regr_1,df_regr_2])
+    ut.log_dataset_data(df)
+    
+    df = df.drop_duplicates(['CUSTOMER.CODE'], keep='first')
     ut.log_dataset_data(df)
 
     if IS_TEST_ENVIRONMENT:
@@ -125,80 +139,63 @@ def convert_retail_to_json():
                        'CUSTOMER.CODE': 'prospect_id'}, inplace=True)
     df = df.reset_index()
     # ################ CONVERTION MAPPING STARTS ########
-
+    
+    # After discussion with business
     df['country_code'] = df['RESIDENCE']
 
-    # if IS_TEST_ENVIRONMENT:
-    df['first_name'] = df['sex'].map(fp.first_name)
-    df['last_name'] = df['FAMILY.NAME'].map(fp.last_name)
+    if IS_TEST_ENVIRONMENT:
+        df['first_name'] = df['sex'].map(fp.first_name)
+        df['last_name'] = df['FAMILY.NAME'].map(fp.last_name)
+        df['national_register_number'] = df['TAX.ID'].map(
+            fp.national_register_number)
+    else:
+        df['first_name'] = df['GIVEN.NAMES']
+        df['last_name'] = df['FAMILY.NAME']
+        
+        # TODO ! Waiting for final decision - what to do if tax.id is empty
+        df['national_register_number'] = df['TAX.ID']
+
     df['full_name'] = (df['first_name'] + ' ' + df['last_name']).astype(str)
 
-    df['national_register_number'] = df['TAX.ID'].map(
-        fp.national_register_number)
+    # DONE - Decision Jan Grybos Retail - 1001, SME 2001
+    # df['customer_segment_id'] = df['TARGET'].map(dm.segment_id)
+    df['customer_segment_id'] = '1001'
 
-    # TODO!! - problem with document | - separation
-    df['document_type'] = df['LEGAL.DOC.NAME'].map(
-        cln.document_type).map(dm.document_type)
-
-    df['document_id'] = df['LEGAL.ID'].map(fp.document_id).astype(str)
-    # TODO! proper date on migration
-    df['expiration_date'] = df['LEGAL.EXP.DATE'].map(fp.future_date)
-    # TODO! proper date on migration
-    df['issue_date'] = df['LEGAL.ISS.DATE'].map(fp.past_date)
-    # TODO!!! - LEGAL.ISS.AUTH - empty
-    df['issuing_authority'] = 'Fake value'
-
+    # First approach was taking from seperat file
+    # from file_testr import get_leagal_doc_set
+    # documents_dict = get_leagal_doc_set().to_dict(orient='index')
+    # df['identity_documents'] = df.apply(lambda x:
+    #                                     cnv.identity_documents_array(x['prospect_id'], 
+    #                                         x['country_code'], documents_dict), axis=1)
+    
     df['identity_documents'] = df.apply(lambda x:
-                                        [{'document_type': x.document_type,
-                                          'document_id': x.document_id,
-                                          'expiration_date': x.expiration_date,
-                                          'issue_date': x.issue_date,
-                                          'issuing_authority': x.issuing_authority,
-                                          'country_code': x.country_code
-                                          }], axis=1)
+                                        cnv.identity_documents_array_splitted( 
+                                            x['country_code'], x['prospect_id'], str(x['LEGAL.DOC.NAME']),
+                                            str(x['LEGAL.ID']),str(x['LEGAL.ISS.DATE']),str(x['LEGAL.EXP.DATE'])), axis=1)
 
-    #  customer_segment_id - dictionary  #TARGET
-    df['customer_segment_id'] = df['TARGET'].map(dm.segment_id)
-
-    # building document type
-
-    # todo test leagal doc
-    from file_testr import get_leagal_doc_set
-    documents_dict = get_leagal_doc_set().to_dict(orient='index')
-
-    df['document_type_list'] = df.apply(lambda x:
-                                        cnv.identity_documents_array(x['prospect_id'], x['country_code'], documents_dict), axis=1)
-
+    
     # ####tax_residence_main_country nested
-    df['trmc_date'] = df['TAX.ID'].map(fp.past_date)
-    df['trmc_tin'] = df['national_register_number']
-    df['trmc_country'] = df['RESIDENCE']
-
+    # Business - A.Bujalska decided that data is empty 02.10.2019
     df['tax_residence_main_country'] = df.apply(lambda x:
-                                                {'date': x.trmc_date,
-                                                 'tin': x.trmc_tin,
-                                                 'country': x.trmc_country}, axis=1)
+                                                {'date': "",
+                                                 'tin': x['national_register_number'],
+                                                 'country': x['RESIDENCE']}, axis=1)
 
-    # df['tax_residence_other_countries'] = df.apply(lambda x:
-    #                                             [{'date': x.trmc_date,
-    #                                              'tin': x.trmc_tin,
-    #                                              'country': x.trmc_country}
-    #                                              ], axis=1)
-
-    # business - Flora and Agata decided that empty list should be sent
+    #business A.Bujalska decided that array is empty 02.10.2019
     df['tax_residence_other_countries'] = np.empty((len(df), 0)).tolist()
 
+    
     ## residential_address - nested
-    # first faker then have to be split from the street
-    # df['ra_street_name'],  df['ra_street_number'], df['ra_apartment'] = zip(
-    #     *df['STREET'].map(cnv.street_converter))
-    df['ra_street_name'] = df['STREET'].map(fp.street_name)
-    df['ra_street_number'] = df['STREET'].map(fp.street_number)
-    df['ra_apartment'] = df['STREET'].map(fp.apartment)
-    df['ra_city'] = df['TOWN.COUNTRY'].map(fp.city)
-    df['ra_postal'] = df['POST.CODE'].map(fp.postalcode)
-
-    # check if COUNTRY is string ? - its written LL.COUNTRY
+    df['ra_street_name'],  df['ra_street_number'], df['ra_apartment'] = zip(
+        *df['STREET'].map(cnv.street_converter))
+    
+    if IS_TEST_ENVIRONMENT:
+        df['ra_city'] = df['TOWN.COUNTRY'].map(fp.city)
+        df['ra_postal'] = df['POST.CODE'].map(fp.postalcode)
+    else:
+        df['ra_city'] = df['TOWN.COUNTRY']
+        df['ra_postal'] = df['POST.CODE']
+    
     df['ra_country'] = df['RESIDENCE']
 
     df['residential_address'] = df.apply(lambda x:
@@ -213,71 +210,58 @@ def convert_retail_to_json():
     df['mailing_address'] = df['residential_address']
 
     # phone_number  phone_number_prefix
-    df['phone_number'] = df.apply(
-        lambda x: fp.phone_number(x['SMS.1'], x['PHONE.1']), axis=1)
-    # df['phone_number'] = df.apply(lambda x: cnv.combine_phone_numbers(x['SMS.1'], x['PHONE.1']), axis=1)
+    df['phone_number'] = df.apply(lambda x: cnv.combine_phone_numbers(x['SMS.1'], x['PHONE.1']), axis=1)
 
     # let's add country to the GSM
     df['CL_GSM_ADDED_PREFIX'] = (
         df['country_code'] + df['phone_number']).astype(str).map(cln.phone_prefix_updater)
     # grab more data from spoused to be valid gsm
+    
     df['CL_GSM_VALID'], df['phone_number_prefix'], df['phone_number'], df['CL_GSM_POSSIBLE'] = zip(
         *df['CL_GSM_ADDED_PREFIX'].map(cnv.phone_segmenter))
 
-    # TODO!! - convert and check - if empty put migration@vodeno.com
-    df['email_address'] = df.apply(lambda x: fp.email(
-        x['EMAIL.1'], x['prospect_id']), axis=1)
-    # df['email_address'] = df.apply(lambda x: cnv.email(x['EMAIL.1'], x['prospect_id']), axis=1)
+    if IS_TEST_ENVIRONMENT:
+        df['email_address'] = df.apply(lambda x: fp.email(
+            x['EMAIL.1'], x['prospect_id']), axis=1)
+        df['birth_place'] = df['L.CU.POB'].map(fp.city)
+        df['birth_date'] = df['DATE.OF.BIRTH'].map(fp.date_of_birth)
+    else:
+        df['email_address'] = df.apply(lambda x: cnv.email(x['EMAIL.1'], x['prospect_id']), axis=1)
+        df['birth_place'] = df['L.CU.POB']
+        df['birth_date'] = df['DATE.OF.BIRTH'].map(cnv.date_converter)
 
     df['title'] = df['TITLE'].map(dm.title)
-
-    # TODO - how to migrate
     df['us_person'] = df.apply(lambda x: cnv.us_person(
         x['RESIDENCE'], x['nationality']), axis=1)
 
-    # tax_residence_other_countries - nested - not exists
+    # Business decission: tax_residence_other_countries - nested - not exists 1.10.2019
 
-    # DATE.OF.BIRTH
-    # TODO!! - convert and check
-    df['birth_date'] = df['DATE.OF.BIRTH'].map(fp.date_of_birth)
-
-    df['birth_place'] = df['L.CU.POB'].map(fp.city)
     df['pep'] = df['L.CU.PEP'].map(cnv.pep)
-
-    # TODO Mapping
-    df['customer_kyc_risk'] = df['CALC.RISK.CLASS']
+    # Tomasz Mierzwinski - Confluence 03.10.2019
+    df['customer_kyc_risk'] = df['CALC.RISK.CLASS'].map(dm.customer_kyc_risk)
 
     # TODO!! - field does not exits
     df["customer_role"] = "OWNER"
 
     df['marital_status_id'] = df['MARITAL.STATUS'].map(dm.marital_status_id)
-
     df['residence'] = df['RESIDENCE'].map(dm.residence_mapper)
-
-    # Confirmation needed - Tomasz Mierzewinski decide to use EMPLOYMENT.STATUS,
-    # OCCUPATION?? 3 values ['HEAD OF MISSION REP ARMENIE NATO', 'MILITAIRE', 'employé']
     df['occupation'] = df['EMPLOYMENT.STATUS'].map(dm.occupation)
 
     df['rooted'] = False
     # mapping add [2, 3, 1, 4] 1 FR, 2 NL, 3, EN, 4 IT
     df['display_and_messaging_language'] = df['LANGUAGE'].map(dm.display_lang)
-
     df['legal_language'] = df['display_and_messaging_language']
 
-    # TODO!!! - no data SRC.TO.BMPB
-
-    # df['source_of_funds'] = df['SRC.TO.BMPB']
-    # TODO! - dictionary to be mapped:
-    df["source_of_funds"] = "GAMBLING"
+    # dictionary SRC.TO.BMPB - field added by Khalid 3.10.2019 - total number 86 records!
+    df["source_of_funds"] = df['SRC.TO.BMPB'].map(dm.source_of_funds)
+    
     # TODO! - dictionary to be mapped: L.CU.SRC.WEALTH - no data in customer
     df['source_of_wealth'] = "GAMBLING"
 
     df['normalized_email_address'] = df['email_address'].map(
         cln.normalize_email)
 
-    # company???
-
-    # TODO!!! - wrong dict from R11 - we migrate only active
+    # Tomasz Motyl decided - only ACTIVE clients are migrated
     # df['CUSTOMER.STATUS'].map(dm.customer_status)
     df['customer_status'] = 'ACTIVE'
 
@@ -286,9 +270,15 @@ def convert_retail_to_json():
     df["face_id_set"] = False
     df["touch_id_set"] = False
 
+
     df['agreements'] = np.empty((len(df), 0)).tolist()
     df["consents"] = np.empty((len(df), 0)).tolist()
 
+    # these fields will be no londer empty arrays
+    # Flora Fred decided to have it all filed in
+    df['agreements'] = df['agreements'].apply(lambda x: ut.agreements_producer('RETAIL'))
+    df['consents'] = df['consents'].apply(lambda x: ut.consents_producer())
+    
     columns = ['first_name', 'last_name', 'full_name', 'sex', 'national_register_number',
                'identity_documents',
             #    'document_type_list', # finally  it is identity_documents
@@ -304,8 +294,17 @@ def convert_retail_to_json():
                'prospect_id'
                ]
 
-    # simply save do json
-    df[columns].to_json('test_c1.json', orient='records')
+   
+    
+    # request from Florentyna Frend
+    # df['first_not_empty_doc_id'], df['first_not_empty_doc_type'], df['first_not_empty_doc_expiration']= zip(*df.apply(lambda x: cnv.identity_documents_array_splitted( 
+    #                                         x['country_code'], x['prospect_id'], str(x['LEGAL.DOC.NAME']),
+    #                                         str(x['LEGAL.ID']),str(x['LEGAL.ISS.DATE']),str(x['LEGAL.EXP.DATE']), True), axis=1))
+    
+    # df_flora = df[['national_register_number', 'prospect_id', 'country_code', 'first_not_empty_doc_id', 'first_not_empty_doc_type','first_not_empty_doc_expiration']]
+    # df_flora['national_register_number'] = df_flora['national_register_number'].map(lambda x: None if (x is not None and len(str(x)) < 3) else x)
+    # df_flora = df_flora[df_flora['national_register_number'].isnull()]
+    # df_flora.to_excel('flora_tax_id.xlsx', index = None, header=True)
 
     res = df[columns].to_json(orient='records')
     res = json.loads(res)
@@ -335,8 +334,9 @@ def convert_sme_to_json():
     # ########################## CONVERTION MAPPING STARTS
     df = df.query(
         'SECTOR > 1999 | SECTOR == 1501 | SECTOR == 1502 | SECTOR == 1602')
-
-    df['customer_segment_id'] = "SME"
+    # DONE - Decision Jan Grybos Retail - 1001, SME 2001
+    # df['customer_segment_id'] = df['TARGET'].map(dm.segment_id)
+    df['customer_segment_id'] = '2001'
 
     # fake name and street
     df['company_name'] = (df['company_registered_number'] +
@@ -381,23 +381,19 @@ def convert_sme_to_json():
                                                 {'date': x.trmc_date,
                                                  'tin': x.trmc_tin,
                                                  'country': x.trmc_country}, axis=1)
-
-    df['tax_residence_other_countries'] = df.apply(lambda x:
-                                                   [{'date': x.trmc_date,
-                                                     'tin': x.trmc_tin,
-                                                     'country': x.trmc_country}], axis=1)
+    # Business decided empty 01.10.2019
+    df['tax_residence_other_countries'] = np.empty((len(df), 0)).tolist()
 
     df['us_person'] = df['country'].map(dm.us_person)
     df['is_migrated'] = True
     df['customer_status'] = 'ACTIVE'
     df['legal_language'] = df['LANGUAGE'].map(dm.display_lang)
 
-    # TODO! - what is the correct value
+    # TODO! - Tomasz Mierzwiński
     df['company_kyc_risk'] = '5'
 
     # todo!! - empty fields
     df['agreements'] = np.empty((len(df), 0)).tolist()
-    # df['tax_residence_other_countries'] = df['tax_residence_main_country']
 
     columns = ['customer_segment_id', 'company_name',
                'company_address',

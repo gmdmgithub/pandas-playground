@@ -67,3 +67,45 @@ def isnull(pd_val):
     """Function solve the problem that empty string is not a NaN val for pandas"""
     
     return (pd.isnull(pd_val) or len(pd_val.strip()) == 0) if isinstance(pd_val, str) else pd.isnull(pd_val)
+
+def agreements_producer(client='RETAIL'):
+    ag = {
+            "date": "2019-12-01",
+            "agree": True,
+            "code": "RETAIL_STANDARD_TNC_ACCEPTANCE",
+            "version": "1.0"
+        }
+    ag1, ag2, ag3, ag4,ag5,ag6 = ag.copy() , ag.copy(), ag.copy(), ag.copy(), ag.copy(), ag.copy()
+
+    if client == 'RETAIL':
+        # ag1 is ok
+        ag2["code"] = "RETAIL_PREMIUM_TNC_ACCEPTANCE"
+        ag3["code"] = "RETAIL_STANDARD_FEES_AND_CHARGES"
+        ag4["code"] = "RETAIL_PREMIUM_FEES_AND_CHARGES"
+        ag5["code"] = "RETAIL_STANDARD_DPGS"
+        ag6["code"] = "RETAIL_PREMIUM_DPGS"
+        
+        return ag1,ag2,ag3,ag4,ag5,ag5
+    
+    ag1["code"] = "SME_STANDARD_TNC_ACCEPTANCE"
+    ag2["code"] = "SME_PREMIUM_TNC_ACCEPTANCE"
+    ag3["code"] = "SME_STANDARD_FEES_AND_CHARGES"
+    ag4["code"] = "SME_PREMIUM_FEES_AND_CHARGES"
+    ag5["code"] = "SME_STANDARD_DPGS"
+    ag6["code"] = "SME_PREMIUM_DPGS"
+    return ag1,ag2,ag3,ag4,ag5,ag5
+
+def consents_producer():
+    cp1 = {
+            "date": "2019-12-01",
+            "agree": False,
+            "code": "PRIVACY_POLICY",
+            "version": "1.0"
+        }
+    cp2, cp3,cp4 = cp1.copy(), cp1.copy(), cp1.copy()
+    cp2 ["code"] = "GENERAL_MARKETING_CONSENT"
+    cp3 ["code"] = "THIRD_PARTIES_MARKETING_CONSENT"
+    cp4 ["code"] = "ELECTRONIC_MARKETING_CONSENT"
+    
+    return cp1,cp2,cp3,cp4
+    

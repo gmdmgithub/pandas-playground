@@ -6,6 +6,9 @@ import dictionary_mapper_switcher as dms
 import util_func as ut
 import pandas as pd
 
+not_fitted = {} #set()
+not_fitted_id = 1
+
 def convert(val, switcher, default_val=None):
     """
     main function, converts value from cell (dictionary from source system) to target system dict val
@@ -159,23 +162,58 @@ def company_nace_basic(val):
     
     return convert(val, switcher, default_val)
 
-def product_type_id(val):
+def product_type_id(owner_id, val):
     """convert CATEGORY - accounts to product_type_id dict"""
     
     # TODO!! - default value?
     default_val = val
 
-    # TODO!! - matching is essential
+    # TODO!! - matching is essential - ok combination currency, RE/CO and code
     switcher = {
-        '1001':'VOD_1001',
-        '1002':'VOD_1002',
-        '1003':'VOD_1003',
-        '1004':'VOD_1004',
-        '1005':'VOD_1005',
-        '1006':'VOD_1006',
-        '1501':'VOD_1501'
+        '1001|CHF|RE': '1803',
+        '1001|EUR|RE': '1801',
+        '1001|GBP|RE': '1803',
+        '1001|USD|RE': '1803',
+        '1002|EUR|RE': '1801',
+        '1003|EUR|RE': '1801',
+        '1004|EUR|RE': '1801',
+        '1005|EUR|RE': '1801',
+        '1006|EUR|RE': '1801',
+        '1501|CHF|CO': '1830',
+        '1501|EUR|CO': '1820',
+        '1501|GBP|CO': '1830',
+        '1501|USD|CO': '1830',
+        '3100|EUR|RE': '3150',
+        '3110|EUR|RE': '3150',
+        '3111|EUR|RE': '3150',
+        '3113|EUR|RE': '3150',
+        '3500|EUR|CO': '3160',
+        '3500|USD|CO': '3160',
+        '3551|EUR|CO': '3161',
+        '3551|USD|CO': '3161',
+        '6001|EUR|RE': '6121',
+        '6002|EUR|CO': '6130',
+        '6002|EUR|RE': '6121',
+        '6003|EUR|CO': '6130',
+        '6010|EUR|CO': '6130',
+        '6100|EUR|CO': '6130',
+        '6100|EUR|RE': '6121',
+        '6101|EUR|CO': '6130',
+        '6101|EUR|RE': '6121',
+        '6103|EUR|CO': '6130',
+        '6103|EUR|RE': '6121',
+        '6001|EUR|CO': '6130',
+        '6621|EUR|RE': '4100'
     }
-    return convert(val, switcher, default_val)
+    # to detect problems more complex way
+    if switcher.get(val):
+        return switcher.get(val) 
+    global not_fitted, not_fitted_id
+    # not_fitted.add(default_val)
+    not_fitted[not_fitted_id] = {owner_id:default_val}
+    not_fitted_id +=1
+    return default_val
+    # return convert(val, switcher, default_val)
 
 def occupation(val):
     """convert EMPLOYMENT.STATUS - accounts to occupation dict"""
@@ -239,7 +277,7 @@ def source_of_wealth(val):
 def source_of_funds(val):
     """convert EB.LOOKUP.LOOKUP.NAME - to source_of_funds"""
     
-    default_val = None
+    default_val = ""
 
     # TODO! - no dict from temenos
     switcher = {
@@ -249,5 +287,18 @@ def source_of_funds(val):
         'IMMOBILIER': 'PRIVATE_MEANS',
         'SALAIRE': 'WORK_SALARY',
         'VALEURSMOBILIERES': 'PRIVATE_MEANS',
+    }
+    return convert(val, switcher, default_val)
+
+def customer_kyc_risk(val):
+    """convert CALC.RISK.CLASS - to customer_kyc_risk"""
+    # Accepted by busienss (T. Mierzwinski) 3.10.2019
+    default_val = None
+    switcher = {
+        '0': '2',
+        '1': '2',
+        '2': '3',
+        '3': '4',
+        '4': '2'
     }
     return convert(val, switcher, default_val)
